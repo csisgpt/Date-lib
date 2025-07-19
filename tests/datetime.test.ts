@@ -1,6 +1,7 @@
 import assert from 'assert';
 import { test } from 'node:test';
 import { DateTime, Duration, Interval } from '../src';
+import { examplePlugin } from '../plugins/examplePlugin';
 
 test('DateTime constructs from ISO string', () => {
   const dt = new DateTime('2020-01-01T00:00:00Z');
@@ -23,5 +24,19 @@ test('Duration and Interval intersection', () => {
   const intervalB = new Interval(bStart, bEnd);
   const inter = intervalA.intersection(intervalB);
   assert.ok(inter);
-  assert.strictEqual(inter?.duration().milliseconds, Duration.from({ days: 5 }).milliseconds);
+  assert.strictEqual(inter?.duration().asMilliseconds(), Duration.from({ days: 5 }).asMilliseconds());
+});
+
+test('plugin adds method', () => {
+  DateTime.use(examplePlugin);
+  const dt = new DateTime('2020-01-01T00:00:00Z');
+  const next = (dt as any).nextDay();
+  assert.strictEqual(next.format('YYYY-MM-DD'), '2020-01-02');
+  DateTime.unuse('example');
+});
+
+test('Duration formatting with locale', () => {
+  const dur = Duration.from({ hours: 3, minutes: 15 });
+  assert.strictEqual(dur.format('en'), '3h 15m');
+  assert.strictEqual(dur.format('fa'), '۳ ساعت ۱۵ دقیقه');
 });

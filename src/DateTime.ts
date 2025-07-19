@@ -9,8 +9,16 @@ const locales: Record<string, Locale> = {
   fa,
 };
 
+export interface PluginAPI {
+  DateTime: typeof DateTime;
+  utils: Record<string, any>;
+}
+
 export interface Plugin {
-  (dtClass: typeof DateTime): void;
+  name: string;
+  initialize?(api: PluginAPI): void;
+  utilities?: Record<string, any>;
+  teardown?(api: PluginAPI): void;
 }
 
 /**
@@ -49,6 +57,11 @@ export class DateTime {
   /** Milliseconds since epoch */
   valueOf(): number {
     return this._date.getTime();
+  }
+
+  /** Timezone offset in minutes */
+  get offset(): number {
+    return this._offset;
   }
 
   /** Format using tokens */
@@ -207,18 +220,50 @@ export class DateTime {
     return new DateTime(d, this._offset);
   }
 
+  /** Start of day */
+  startOfDay(): DateTime {
+    const d = this.toDate();
+    d.setHours(0, 0, 0, 0);
+    return new DateTime(d, this._offset);
+  }
+
+  /** Start of month */
+  startOfMonth(): DateTime {
+    const d = this.toDate();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return new DateTime(d, this._offset);
+  }
+
   /** toString */
   toString(): string {
     return this.format('YYYY-MM-DDTHH:mm:ssZ');
   }
 
   // Plugin system
-  private static _plugins: Plugin[] = [];
+  static pluginUtils: Record<string, any> = {};
+  private static _plugins: Record<string, Plugin> = {};
 
   static use(plugin: Plugin) {
-    if (!this._plugins.includes(plugin)) {
-      plugin(this);
-      this._plugins.push(plugin);
+    if (!this._plugins[plugin.name]) {
+      if (plugin.utilities) {
+        Object.assign(this.pluginUtils, plugin.utilities);
+      }
+      plugin.initialize?.({ DateTime, utils: this.pluginUtils });
+      this._plugins[plugin.name] = plugin;
+    }
+  }
+
+  static unuse(name: string) {
+    const plugin = this._plugins[name];
+    if (plugin) {
+      plugin.teardown?.({ DateTime, utils: this.pluginUtils });
+      if (plugin.utilities) {
+        for (const k of Object.keys(plugin.utilities)) {
+          delete this.pluginUtils[k];
+        }
+      }
+      delete this._plugins[name];
     }
   }
 }

@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "module": "commonjs",
+    "rootDir": ".",
+    "outDir": "dist",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "lib": ["es2020"],
+    "skipLibCheck": true
+  },
+  "include": ["src", "plugins", "tests"]
+}

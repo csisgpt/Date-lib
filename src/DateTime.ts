@@ -1,4 +1,5 @@
-import { formatDate, parseDate, offsetToString } from '../utils';
+import { formatDate, parseDate, offsetToString, getTimeZoneOffset } from '../utils';
+import { Duration } from './Duration';
 import en from '../locales/en.json';
 import fa from '../locales/fa.json';
 
@@ -169,6 +170,18 @@ export class DateTime {
   /** Convert to offset */
   withOffset(minutes: number): DateTime {
     return new DateTime(this._date, minutes);
+  }
+
+  /** Duration to another DateTime taking timezone into account */
+  diff(other: DateTime): Duration {
+    const ms = other.valueOf() - this.valueOf();
+    return new Duration(ms);
+  }
+
+  /** Convert to specific IANA timezone */
+  toTimeZone(tz: string): DateTime {
+    const offset = getTimeZoneOffset(this._date, tz);
+    return new DateTime(this._date, offset);
   }
 
   /** Offset string */

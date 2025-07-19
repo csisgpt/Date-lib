@@ -36,3 +36,37 @@ export function formatDate(date: Date, pattern: string, loc: LocaleData, offset:
 
   return pattern.replace(/YYYY|MM|DD|HH|mm|ss|Z/g, (t) => map[t]);
 }
+
+/** Get timezone offset in minutes for a specific IANA timezone */
+export function getTimeZoneOffset(date: Date, timeZone: string): number {
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+  const parts = dtf.formatToParts(date);
+  const data: Record<string, number> = {};
+  for (const p of parts) {
+    if (p.type !== 'literal') data[p.type] = parseInt(p.value, 10);
+  }
+  const asUTC = Date.UTC(
+    data.year,
+    data.month - 1,
+    data.day,
+    data.hour,
+    data.minute,
+    data.second
+  );
+  return -(asUTC - date.getTime()) / 60000;
+}
+
+/** Convert date to a different IANA timezone */
+export function convertToTimeZone(date: Date, timeZone: string): Date {
+  const offset = getTimeZoneOffset(date, timeZone);
+  return new Date(date.getTime() - (date.getTimezoneOffset() - offset) * 60000);
+}

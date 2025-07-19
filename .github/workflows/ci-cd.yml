@@ -1,0 +1,46 @@
+# Continuous Integration and Deployment workflow for csistsdate
+# Runs on pushes to main, tests, builds, and publishes to npm
+
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-test-publish:
+    name: Build, Test and Publish
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout source code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Set up Node.js with dependency caching
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: package.json
+          registry-url: 'https://registry.npmjs.org'
+
+      # Install project dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Run test suite (Vitest/Jest should be configured in package.json)
+      - name: Run tests
+        run: npm test
+
+      # Build the TypeScript project
+      - name: Build project
+        run: npm run build
+
+      # Publish to npm if the above steps succeeded
+      - name: Publish package
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
